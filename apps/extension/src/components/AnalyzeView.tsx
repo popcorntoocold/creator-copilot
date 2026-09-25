@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import type { CreatorProfile, PageContext, Recommendation } from '@creator-copilot/shared';
+import type { AnalysisResult, CreatorProfile, PageContext, Recommendation } from '@creator-copilot/shared';
 import { createRecommendations } from '@creator-copilot/shared';
 import type { ClientExtractionResult } from '../lib/chromeClient';
 import { Icon } from './Icon';
 import { RecommendationCard } from './RecommendationCard';
+import type { AiSessionState } from '../state/auth';
+import { ActivationCard } from './ActivationCard';
 
 type AnalyzeViewProps = {
   profile: CreatorProfile;
@@ -13,6 +15,9 @@ type AnalyzeViewProps = {
   onRecommendations: (recommendations: Recommendation[]) => void;
   onComplete: (id: string) => void;
   onDismiss: (id: string) => void;
+  auth: AiSessionState;
+  onActivate: (inviteCode: string) => Promise<void>;
+  requestAiAnalysis: (context: PageContext) => Promise<AnalysisResult>;
 };
 
 const errorCopy: Record<string, string> = {
@@ -32,10 +37,14 @@ export function AnalyzeView({
   onRecommendations,
   onComplete,
   onDismiss,
+  auth,
+  onActivate,
+  requestAiAnalysis,
 }: AnalyzeViewProps) {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'preview' | 'complete' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'preview' | 'ai-loading' | 'ai-error' | 'complete' | 'error'>('idle');
   const [context, setContext] = useState<PageContext | null>(null);
   const [error, setError] = useState('');
+  const [retryable, setRetryable] = useState(false);
 
   async function analyze() {
     setStatus('loading');
@@ -51,10 +60,27 @@ export function AnalyzeView({
     setStatus('preview');
   }
 
-  function confirm() {
+  function confirmLocal() {
     if (!context) return;
     onRecommendations(createRecommendations(context, profile));
     setStatus('complete');
+  }
+
+  async function confirmAi() {
+    if (!context) return;
+    setStatus('ai-loading');
+    setError('');
+    setRetryable(false);
+    try {
+      const result = await requestAiAnalysis(context);
+      onRecommendations(result.recommendations);
+      setStatus('complete');
+    } catch (cause) {
+      const failure = cause as Error & { retryable?: boolean; quotaConsumed?: boolean };
+      setError(failure.message || 'AI analysis could not be completed.');
+      setRetryable(Boolean(failure.retryable));
+      setStatus('ai-error');
+    }
   }
 
   return (
@@ -67,10 +93,18 @@ export function AnalyzeView({
         </div>
       </div>
 
+      {auth.status !== 'active' ? (
+        <ActivationCard auth={auth} onActivate={onActivate} compact />
+      ) : null}
+
       <div className="analysis-console">
         <div className="console-topline">
           <span><i className={`status-dot status-${status}`} /> {status === 'idle' ? 'Waiting for a page' : status}</span>
-          <span>Public X only</span>
+          <span>
+            {auth.status === 'active' && auth.quota
+              ? `${auth.quota.remaining} of ${auth.quota.limit} analyses left`
+              : 'Public X only'}
+          </span>
         </div>
 
         {status === 'idle' || status === 'error' ? (
@@ -92,7 +126,7 @@ export function AnalyzeView({
           </div>
         ) : null}
 
-        {context && (status === 'preview' || status === 'complete') ? (
+        {context && ['preview', 'ai-loading', 'ai-error', 'complete'].includes(status) ? (
           <div className="context-preview">
             <div className="preview-heading">
               <div><span>Detected {context.pageType}</span><strong>{context.handle ?? 'Public X page'}</strong></div>
@@ -104,12 +138,32 @@ export function AnalyzeView({
                 <div key={key}><dt>{key}</dt><dd>{value?.toLocaleString()}</dd></div>
               ))}
             </dl>
-            {status === 'preview' ? (
+            {status === 'preview' || status === 'ai-loading' || status === 'ai-error' ? (
               <div className="confirmation-strip">
-                <p><strong>Confirm this context?</strong> Raw page text stays in this sidebar session.</p>
+                <p>
+                  <strong>Confirm this context?</strong>{' '}
+                  {auth.status === 'active'
+                    ? 'The displayed fields will be sent to Creator Copilot and OpenAI only after you choose AI analysis.'
+                    : 'Raw page text stays in this sidebar session when you create locally.'}
+                </p>
+                {error ? <p className="inline-error" role="alert">{error}</p> : null}
                 <div>
-                  <button className="primary-button" type="button" onClick={confirm}>
-                    Confirm and create recommendations
+                  {auth.status === 'active' ? (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={status === 'ai-loading'}
+                      onClick={() => void confirmAi()}
+                    >
+                      {status === 'ai-loading'
+                        ? 'Creating AI analysis…'
+                        : status === 'ai-error' && retryable
+                          ? 'Retry AI analysis'
+                          : 'Send for AI analysis'}
+                    </button>
+                  ) : null}
+                  <button className={auth.status === 'active' ? 'secondary-button' : 'primary-button'} type="button" onClick={confirmLocal}>
+                    Create recommendations locally
                   </button>
                   <button className="quiet-button" type="button" onClick={() => { setContext(null); onContext(null); setStatus('idle'); }}>
                     Cancel

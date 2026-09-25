@@ -55,6 +55,7 @@ h1, h2 { font-family: 'Cormorant Garamond', Georgia, serif; }
 .brand-subtitle { margin: 0; color: var(--muted); font-size: 11px; }
 .local-badge, .privacy-chip, .active-chip, .status-chip { display: inline-flex; align-items: center; min-height: 26px; padding: 4px 9px; border-radius: 999px; font-size: 10px; font-weight: 700; }
 .local-badge { color: var(--lacquer-deep); background: var(--blush); border: 1px solid #f3c9dd; }
+.local-badge.ai-badge { color: #fff; background: var(--ink); border-color: var(--ink); }
 
 .view-nav { display: grid; grid-template-columns: repeat(5, minmax(58px, 1fr)); gap: 5px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--paper); overflow-x: auto; }
 .nav-item { min-height: 50px; display: grid; place-items: center; align-content: center; gap: 4px; padding: 6px 4px; border: 0; border-radius: 12px; color: var(--muted); background: transparent; transition: color 180ms ease, background 180ms ease; }
@@ -80,6 +81,7 @@ h1, h2 { font-family: 'Cormorant Garamond', Georgia, serif; }
 .icon-button { width: 44px; padding: 0; color: var(--muted); background: transparent; }
 .icon-button:hover { color: var(--danger); background: #fff0f3; }
 .danger-button { padding: 9px 13px; color: #fff; background: var(--danger); }
+button:disabled { cursor: not-allowed; opacity: .56; box-shadow: none; }
 
 .empty-plan { display: grid; grid-template-columns: 1.1fr .9fr; gap: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); }
 .empty-plan-copy { padding: 28px; background: radial-gradient(circle at 90% 8%, #f9ccdf 0, transparent 38%); }
@@ -138,6 +140,24 @@ h1, h2 { font-family: 'Cormorant Garamond', Georgia, serif; }
 .confirmation-strip p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .confirmation-strip div { display: flex; flex-wrap: wrap; gap: 8px; }
 .analysis-results { margin-top: 18px; }
+
+.activation-seal {
+  position: relative; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 14px;
+  align-items: center; margin: 0 0 16px; padding: 16px; overflow: hidden; border: 1px solid #e8bfd2;
+  border-radius: 18px; background: linear-gradient(112deg, #fff 0%, #fff4f9 100%);
+  box-shadow: 0 12px 30px rgba(91,29,62,.07);
+}
+.activation-seal::after { content: ''; position: absolute; width: 96px; height: 96px; right: -58px; bottom: -66px; border: 18px solid rgba(197,45,114,.12); border-radius: 50%; pointer-events: none; }
+.activation-seal.is-active { border-color: #bcdfd2; background: linear-gradient(112deg, #fff 0%, #edf9f4 100%); }
+.activation-seal.compact { margin-top: -5px; }
+.seal-icon { width: 44px; height: 44px; display: grid; place-items: center; color: #fff; border-radius: 50%; background: var(--lacquer); box-shadow: 0 0 0 7px rgba(197,45,114,.1); }
+.is-active .seal-icon { background: var(--success); box-shadow: 0 0 0 7px rgba(36,115,91,.1); }
+.seal-copy { min-width: 0; display: grid; gap: 3px; }
+.seal-copy > strong { font: 700 21px/1.05 'Cormorant Garamond', Georgia, serif; }
+.seal-copy > span { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.seal-copy label { margin-top: 7px; }
+.seal-copy input { max-width: 330px; }
+.activation-error { color: var(--danger) !important; font-size: 10px; }
 
 .empty-view { min-height: 360px; display: grid; place-content: center; justify-items: center; padding: 34px; text-align: center; border: 1px solid var(--line); border-radius: 22px; background: var(--paper); }
 .experiment-board { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -211,6 +231,8 @@ input::placeholder, textarea::placeholder { color: #a48a98; }
   .view-heading h1 { font-size: 34px; }
   .recommendation-card, .context-preview, .experiment-steps, .check-in-panel, .settings-form { padding: 16px; }
   .danger-zone { align-items: flex-start; flex-direction: column; }
+  .activation-seal { grid-template-columns: 42px minmax(0, 1fr); align-items: start; }
+  .activation-seal > button { grid-column: 1 / -1; width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

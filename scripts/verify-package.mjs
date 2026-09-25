@@ -1,28 +1,27 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { unzipSync } from 'fflate';
+import { APPROVED_PERMISSIONS, PRODUCTION_API_ORIGIN, verifyArchive } from './verify-package-lib.mjs';
 
 const distManifestPath = new URL('../apps/extension/dist/manifest.json', import.meta.url);
 const archivePath = new URL('../release/creator-copilot-extension.zip', import.meta.url);
+const rootPackagePath = new URL('../package.json', import.meta.url);
+const extensionPackagePath = new URL('../apps/extension/package.json', import.meta.url);
 
 assert.ok(existsSync(distManifestPath), 'Build output is missing manifest.json');
 assert.ok(existsSync(archivePath), 'Packaged extension archive is missing');
 
 const manifest = JSON.parse(readFileSync(distManifestPath, 'utf8'));
-assert.deepEqual(
-  [...manifest.permissions].sort(),
-  ['activeTab', 'scripting', 'sidePanel', 'storage'].sort(),
-  'Manifest permissions changed',
+const rootPackage = JSON.parse(readFileSync(rootPackagePath, 'utf8'));
+const extensionPackage = JSON.parse(readFileSync(extensionPackagePath, 'utf8'));
+assert.equal(rootPackage.version, extensionPackage.version, 'Root and extension package versions differ');
+assert.equal(manifest.version, extensionPackage.version, 'Built manifest and package versions differ');
+
+const result = verifyArchive(new Uint8Array(readFileSync(archivePath)), {
+  expectedVersion: extensionPackage.version,
+  expectedApiOrigin: PRODUCTION_API_ORIGIN,
+});
+assert.deepEqual(result.manifest, manifest, 'Built and archived manifests differ');
+
+console.log(
+  `Package verified: ${result.files.length} files, ${APPROVED_PERMISSIONS.length} approved permissions, one production API host.`,
 );
-assert.equal(manifest.host_permissions, undefined, 'Host permissions must remain absent');
-
-const archive = unzipSync(new Uint8Array(readFileSync(archivePath)));
-const files = Object.keys(archive).sort();
-assert.ok(files.includes('manifest.json'), 'Archive is missing manifest.json');
-assert.ok(files.includes('index.html'), 'Archive is missing index.html');
-assert.ok(files.some((file) => file.startsWith('assets/') && file.endsWith('.js')), 'Archive is missing bundled JavaScript');
-assert.equal(files.some((file) => file.endsWith('.map')), false, 'Archive contains source maps');
-assert.equal(files.some((file) => /(^|\/)\.env(?:\.|$)/.test(file)), false, 'Archive contains an environment file');
-assert.equal(files.some((file) => /(?:test|fixture)\.[cm]?[jt]sx?$/.test(file)), false, 'Archive contains tests or fixtures');
-
-console.log(`Package verified: ${files.length} files, ${manifest.permissions.length} permissions, no host access.`);

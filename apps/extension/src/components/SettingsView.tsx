@@ -1,14 +1,19 @@
 import { useState, type FormEvent } from 'react';
 import type { CreatorProfile } from '@creator-copilot/shared';
 import { Icon } from './Icon';
+import type { AiSessionState } from '../state/auth';
+import { ActivationCard } from './ActivationCard';
 
 type SettingsViewProps = {
   profile: CreatorProfile;
   onSave: (profile: CreatorProfile) => void;
   onDelete: () => void;
+  auth: AiSessionState;
+  onActivate: (inviteCode: string) => Promise<void>;
+  onSignOut: () => Promise<void>;
 };
 
-export function SettingsView({ profile, onSave, onDelete }: SettingsViewProps) {
+export function SettingsView({ profile, onSave, onDelete, auth, onActivate, onSignOut }: SettingsViewProps) {
   const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -58,6 +63,8 @@ export function SettingsView({ profile, onSave, onDelete }: SettingsViewProps) {
         <button className="primary-button" type="submit">Save changes</button>
         {saved ? <p className="success-note" role="status"><Icon name="check" size={16} /> Settings saved locally.</p> : null}
       </form>
+
+      <ActivationCard auth={auth} onActivate={onActivate} onSignOut={onSignOut} />
 
       <div className="danger-zone">
         <div><h2>Delete local data</h2><p>Removes your profile, drafts, and experiment check-ins from this browser.</p></div>

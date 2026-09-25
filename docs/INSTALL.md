@@ -26,16 +26,16 @@ After a code update, run `npm run package` again and click the reload button on 
 1. Open a public profile or individual post on `x.com`.
 2. Click the Creator Copilot toolbar icon. This user gesture opens the side panel and gives the extension temporary access to that active tab.
 3. Complete the studio profile. Add a public handle, creator name, voice notes, welcomed topics, hard boundaries, destination, and weekly goal.
-4. Read and accept the local-pilot privacy disclosure.
+4. Read and accept the privacy disclosure.
 5. Open **Analyze** and click **Analyze this page**.
 6. Inspect the detected page type, handle, visible post or bio text, and public metrics.
-7. Click **Confirm and create recommendations** only if the preview is the context you intended to analyze.
+7. Choose **Create recommendations locally**, or activate the invite-only AI beta and click **Send for AI analysis**, only if the preview is the context you intended to analyze.
 8. Review and explicitly copy a draft. Creator Copilot never publishes it.
 
 ## What each view does
 
 - **Today** shows up to three ready actions and daily completion progress.
-- **Analyze** requests the current public X context, previews it, and creates local recommendations after confirmation.
+- **Analyze** requests the current public X context, previews it, and creates local or invite-gated AI recommendations after confirmation.
 - **Create** keeps current copyable drafts together.
 - **Experiments** runs one focused growth experiment and stores weekly check-ins.
 - **Settings** edits voice, boundaries, destination, and goal or deletes all locally stored profile, draft, and experiment data.
@@ -44,7 +44,7 @@ After a code update, run `npm run package` again and click the reload button on 
 
 - X public profiles, posts, and feeds are the only supported pages.
 - X markup changes can make extraction fail closed until selectors are updated.
-- The recommendation engine is deterministic and local in this build. It is not yet connected to a cloud AI provider.
+- Deterministic recommendations run locally. Invite-gated AI analysis sends only the confirmed preview and creator profile fields to the service.
 - There are no accounts, cross-device sync, platform integrations, billing, analytics backend, or automatic actions.
 - Deleting local data cannot be undone.
 

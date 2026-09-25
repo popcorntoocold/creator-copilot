@@ -4,12 +4,14 @@ import type {
   PageContext,
   Recommendation,
 } from '@creator-copilot/shared';
+import { initialAuthState, type AiSessionState } from './auth';
 
 export type CreatorState = {
   profile: CreatorProfile | null;
   recommendations: Recommendation[];
   experiment: Experiment;
   sessionContext: PageContext | null;
+  auth: AiSessionState;
 };
 
 export const initialExperiment: Experiment = {
@@ -31,4 +33,5 @@ export const initialCreatorState: CreatorState = {
   recommendations: [],
   experiment: initialExperiment,
   sessionContext: null,
+  auth: initialAuthState,
 };

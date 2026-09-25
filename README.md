@@ -2,7 +2,7 @@
 
 Creator Copilot is a creator-controlled Chrome sidebar for planning public X content. It reads a minimal public-page context only after an explicit request, shows the detected context for confirmation, and creates drafts that the creator can review and copy herself.
 
-The current release is a local MVP. It includes onboarding, Today, Analyze, Create, Experiments, Settings, local storage, safety rules, and a deterministic local recommendation provider. It does not include cloud accounts, paid AI calls, automatic posting, or private-message access.
+The current development version includes onboarding, Today, Analyze, Create, Experiments, Settings, local storage, safety rules, deterministic local recommendations, and an invite-gated AI beta. It does not include cloud accounts, automatic posting, or private-message access.
 
 ## Install the local MVP
 
@@ -35,5 +35,7 @@ npm run package
 - Permissions: `sidePanel`, `storage`, `activeTab`, and `scripting` only.
 - No persistent host permission and no `<all_urls>` access.
 - Direct-message routes fail closed before the page DOM is read.
-- Raw page context stays in the active sidebar session and is excluded from persisted state.
+- Raw page context stays in the active sidebar session and is excluded from persisted state. It is sent to the AI service only after a second, explicit confirmation.
 - Copying is explicit. The extension does not post, reply, follow, like, purchase, or change account settings.
+
+The reviewable privacy policy and store disclosures live in [`docs/privacy`](docs/privacy) and [`docs/store`](docs/store). The API hosts public `/privacy` and `/support` pages when deployed.

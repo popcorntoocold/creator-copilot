@@ -6,6 +6,7 @@ const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'apps/extension/dist');
 const release = resolve(root, 'release');
 const archivePath = resolve(release, 'creator-copilot-extension.zip');
+const archiveTimestamp = new Date('2000-01-01T00:00:00.000Z');
 
 function collect(directory) {
   const entries = {};
@@ -16,7 +17,7 @@ function collect(directory) {
       continue;
     }
     const name = relative(dist, absolute).replaceAll('\\', '/');
-    entries[name] = new Uint8Array(readFileSync(absolute));
+    entries[name] = [new Uint8Array(readFileSync(absolute)), { mtime: archiveTimestamp }];
   }
   return entries;
 }

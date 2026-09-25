@@ -10,4 +10,5 @@ release/
 !.env.example
 .worktrees/
 .superpowers/
+apps/api/.generated/
 

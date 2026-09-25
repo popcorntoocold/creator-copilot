@@ -15,10 +15,11 @@ type AppShellProps = {
   activeView: ViewName;
   onNavigate: (view: ViewName) => void;
   completed: number;
+  aiActive?: boolean;
   children: ReactNode;
 };
 
-export function AppShell({ activeView, onNavigate, completed, children }: AppShellProps) {
+export function AppShell({ activeView, onNavigate, completed, aiActive = false, children }: AppShellProps) {
   const progress = Math.min(100, Math.round((completed / 3) * 100));
 
   return (
@@ -37,7 +38,9 @@ export function AppShell({ activeView, onNavigate, completed, children }: AppShe
             <p className="brand-name">Creator Copilot</p>
             <p className="brand-subtitle">Your private working studio</p>
           </div>
-          <span className="local-badge">Local pilot</span>
+          <span className={aiActive ? 'local-badge ai-badge' : 'local-badge'}>
+            {aiActive ? 'AI beta' : 'Local mode'}
+          </span>
         </header>
 
         <nav className="view-nav" aria-label="Creator Copilot views">

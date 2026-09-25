@@ -1,0 +1,44 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "creator-copilot-api-dev",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "creator-copilot-dev",
+      "database_id": "2b8c3259-e8cc-4945-8e59-eab25934ff03"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "PROVIDER": "fake",
+    "OPENAI_MODEL": "gpt-6-luna",
+    "OPENAI_TIMEOUT_MS": "15000",
+    "ALLOWED_EXTENSION_ORIGINS": "http://localhost:5173",
+    "DAILY_ANALYSIS_LIMIT": "10",
+    "NETWORK_DAILY_LIMIT": "100"
+  },
+  "env": {
+    "production": {
+      "name": "creator-copilot-api",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "creator-copilot-production",
+          "database_id": "e2df3225-363b-4132-a4ea-feec7d769f6f"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "production",
+        "PROVIDER": "openai",
+        "OPENAI_MODEL": "gpt-6-luna",
+        "OPENAI_TIMEOUT_MS": "15000",
+        "ALLOWED_EXTENSION_ORIGINS": "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "DAILY_ANALYSIS_LIMIT": "10",
+        "NETWORK_DAILY_LIMIT": "100"
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { CreatorProfile, ExperimentOutcome, PageContext, Recommendation } from '@creator-copilot/shared';
+import type { AnalysisResult, CreatorProfile, ExperimentOutcome, PageContext, Recommendation } from '@creator-copilot/shared';
 import { AppShell, type ViewName } from './components/AppShell';
 import { AnalyzeView } from './components/AnalyzeView';
 import { CreateView } from './components/CreateView';
@@ -11,15 +11,30 @@ import { requestPageContext as defaultRequestPageContext, type ClientExtractionR
 import { initialCreatorState, type CreatorState } from './state/defaults';
 import { creatorReducer, type CreatorAction } from './state/reducer';
 import { clearPersistentState, loadPersistentState, savePersistentState } from './state/store';
+import { ApiClientError, CreatorCopilotApiClient } from './lib/apiClient';
+import { createInstallationId } from './state/auth';
+import { PRODUCTION_API_ORIGIN } from './releaseConfig';
 
 type AppProps = {
   initialState?: CreatorState;
   requestPageContext?: () => Promise<ClientExtractionResult>;
+  apiClient?: CreatorCopilotApiClient;
 };
+
+function createDefaultApiClient() {
+  const isDevelopment = import.meta.env.DEV;
+  return new CreatorCopilotApiClient({
+    baseUrl: isDevelopment
+      ? import.meta.env.VITE_CREATOR_COPILOT_API_URL ?? 'http://127.0.0.1:8787'
+      : PRODUCTION_API_ORIGIN,
+    allowLocalhost: isDevelopment,
+  });
+}
 
 export function App({
   initialState,
   requestPageContext = defaultRequestPageContext,
+  apiClient = createDefaultApiClient(),
 }: AppProps) {
   const [state, setState] = useState<CreatorState>(initialState ?? initialCreatorState);
   const [loaded, setLoaded] = useState(initialState !== undefined);
@@ -80,6 +95,43 @@ export function App({
     setActiveView('today');
   }
 
+  async function activateAi(inviteCode: string) {
+    const installationId = state.auth.installationId ?? createInstallationId();
+    const result = await apiClient.redeemInvite(inviteCode, installationId);
+    dispatch({
+      type: 'activate_ai',
+      installationId,
+      token: result.token,
+      expiresAt: result.expiresAt,
+      quota: result.quota,
+    });
+  }
+
+  async function requestAiAnalysis(context: PageContext): Promise<AnalysisResult> {
+    try {
+      const result = await apiClient.analyze({ token: state.auth.token, profile: state.profile!, context });
+      dispatch({ type: 'set_ai_quota', quota: result.quota });
+      return result;
+    } catch (cause) {
+      if (cause instanceof ApiClientError && (cause.code === 'session_expired' || cause.code === 'session_revoked')) {
+        dispatch({
+          type: 'clear_ai_session',
+          status: cause.code === 'session_expired' ? 'expired' : 'revoked',
+        });
+      }
+      throw cause;
+    }
+  }
+
+  async function signOutAi() {
+    const token = state.auth.token;
+    try {
+      if (token) await apiClient.revoke(token);
+    } finally {
+      dispatch({ type: 'clear_ai_session', status: 'inactive' });
+    }
+  }
+
   if (!loaded) {
     return (
       <div className="loading-screen" aria-live="polite">
@@ -94,7 +146,7 @@ export function App({
   }
 
   return (
-    <AppShell activeView={activeView} onNavigate={setActiveView} completed={completed}>
+    <AppShell activeView={activeView} onNavigate={setActiveView} completed={completed} aiActive={state.auth.status === 'active'}>
       {activeView === 'today' ? (
         <TodayView
           profile={state.profile}
@@ -113,6 +165,9 @@ export function App({
           onRecommendations={setRecommendations}
           onComplete={complete}
           onDismiss={dismiss}
+          auth={state.auth}
+          onActivate={activateAi}
+          requestAiAnalysis={requestAiAnalysis}
         />
       ) : null}
       {activeView === 'create' ? (
@@ -127,7 +182,14 @@ export function App({
         <ExperimentsView experiment={state.experiment} onCheckIn={checkIn} />
       ) : null}
       {activeView === 'settings' ? (
-        <SettingsView profile={state.profile} onSave={saveProfile} onDelete={() => void deleteData()} />
+        <SettingsView
+          profile={state.profile}
+          onSave={saveProfile}
+          onDelete={() => void deleteData()}
+          auth={state.auth}
+          onActivate={activateAi}
+          onSignOut={signOutAi}
+        />
       ) : null}
     </AppShell>
   );

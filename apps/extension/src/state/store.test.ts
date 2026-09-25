@@ -74,4 +74,24 @@ describe('persistent state', () => {
 
     expect(JSON.stringify(adapter.inspect())).not.toContain(sentinel);
   });
+
+  it('persists the installation session but never an invite code', async () => {
+    const adapter = createMemoryAdapter();
+    await savePersistentState(
+      {
+        ...initialCreatorState,
+        auth: {
+          status: 'active',
+          installationId: '123e4567-e89b-42d3-a456-426614174000',
+          token: 'session-token',
+          expiresAt: '2026-10-24T12:00:00.000Z',
+          quota: { remaining: 10, limit: 10, resetsAt: '2026-09-25T00:00:00.000Z' },
+        },
+      },
+      adapter,
+    );
+
+    expect(adapter.inspect()).toMatchObject({ auth: { status: 'active', token: 'session-token' } });
+    expect(JSON.stringify(adapter.inspect())).not.toMatch(/inviteCode|creator-beta/i);
+  });
 });

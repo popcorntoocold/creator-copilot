@@ -53,4 +53,27 @@ describe('creatorReducer', () => {
 
     expect(creatorReducer(dirty, { type: 'delete_local_data' })).toEqual(initialCreatorState);
   });
+
+  it('activates, updates quota, and signs out without deleting creator work', () => {
+    const active = creatorReducer(initialCreatorState, {
+      type: 'activate_ai',
+      installationId: '123e4567-e89b-42d3-a456-426614174000',
+      token: 'session-token',
+      expiresAt: '2026-10-24T12:00:00.000Z',
+      quota: { remaining: 10, limit: 10, resetsAt: '2026-09-25T00:00:00.000Z' },
+    });
+    const updated = creatorReducer(active, {
+      type: 'set_ai_quota',
+      quota: { remaining: 9, limit: 10, resetsAt: '2026-09-25T00:00:00.000Z' },
+    });
+    const signedOut = creatorReducer(
+      { ...updated, recommendations: [recommendation] },
+      { type: 'clear_ai_session', status: 'inactive' },
+    );
+
+    expect(active.auth).toMatchObject({ status: 'active', token: 'session-token' });
+    expect(updated.auth.quota?.remaining).toBe(9);
+    expect(signedOut.auth).toEqual(initialCreatorState.auth);
+    expect(signedOut.recommendations).toEqual([recommendation]);
+  });
 });

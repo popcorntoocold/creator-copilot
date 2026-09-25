@@ -15,6 +15,7 @@ function persistentSlice(state: CreatorState): PersistentCreatorState {
     profile: state.profile,
     recommendations: state.recommendations,
     experiment: state.experiment,
+    auth: state.auth,
   };
 }
 
@@ -78,6 +79,7 @@ export async function loadPersistentState(
     profile: stored.profile ?? initialCreatorState.profile,
     recommendations: stored.recommendations ?? initialCreatorState.recommendations,
     experiment: stored.experiment ?? initialCreatorState.experiment,
+    auth: stored.auth ?? initialCreatorState.auth,
     sessionContext: null,
   };
 }
