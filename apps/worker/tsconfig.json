@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "types": ["vitest/globals", "chrome"]
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types", "vitest/globals"]
   },
   "include": ["src"]
 }

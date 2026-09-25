@@ -1,44 +1,28 @@
-import { extractPageContextInTab } from './extraction/extractPageContext';
+import type { PangramResult } from './detector';
 
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+const API_URL = import.meta.env.VITE_SCREENER_API_URL;
+const TOKEN = import.meta.env.VITE_SCREENER_TOKEN;
+
+export type PangramResponse = { ok: true; result: PangramResult } | { ok: false; reason: string };
+
+async function classify(text: string): Promise<PangramResponse> {
+  if (!API_URL || !TOKEN) return { ok: false, reason: 'not_configured' };
+  try {
+    const response = await fetch(`${API_URL.replace(/\/+$/, '')}/classify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-screener-token': TOKEN },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) return { ok: false, reason: `http_${response.status}` };
+    return { ok: true, result: (await response.json()) as PangramResult };
+  } catch {
+    return { ok: false, reason: 'network' };
+  }
+}
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  if (
-    !message ||
-    typeof message !== 'object' ||
-    !('type' in message) ||
-    message.type !== 'extract_public_x_context'
-  ) {
-    return false;
-  }
-
-  void (async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !tab.url) {
-      sendResponse({ ok: false, reason: 'no_active_tab' });
-      return;
-    }
-
-    const activeUrl = new URL(tab.url);
-    if (!['x.com', 'www.x.com'].includes(activeUrl.hostname.toLowerCase())) {
-      sendResponse({ ok: false, reason: 'unsupported_site' });
-      return;
-    }
-    if (/^\/(messages|i\/chat)(?:\/|$)/.test(activeUrl.pathname)) {
-      sendResponse({ ok: false, reason: 'private_route' });
-      return;
-    }
-
-    try {
-      const [result] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: extractPageContextInTab,
-      });
-      sendResponse(result?.result ?? { ok: false, reason: 'page_not_recognized' });
-    } catch {
-      sendResponse({ ok: false, reason: 'permission_denied' });
-    }
-  })();
-
+  if (!message || typeof message !== 'object' || !('type' in message) || message.type !== 'pangram') return false;
+  const text = 'text' in message && typeof message.text === 'string' ? message.text : '';
+  void classify(text).then(sendResponse);
   return true;
 });
